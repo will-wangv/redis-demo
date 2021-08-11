@@ -1,0 +1,92 @@
+<!-- saved from url=(0022)http://127.0.0.1:8080/ -->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>匿名直播间聊天室</title></head>
+<body>
+<script type="text/javascript">
+    var socket;
+    if (!window.WebSocket) {
+        window.WebSocket = window.MozWebSocket;
+    }
+    if (!window.WebSocket) {
+        alert("Your browser does not support Web Socket.");
+    }
+    var currentRoom; // 当前直播间
+    var t1; // 定时刷新直播间信息
+
+    // 1. 进入房间
+    function inRoom(userId, score, roomId) {
+        document.getElementById('responseText').value = ""; // 清空公屏
+        // 建立连接
+        socket = new WebSocket("ws://127.0.0.1:8080/redis-study-03/ws/chat?score=" + score + "&userId=" + userId + "&roomId=" + roomId);
+        socket.onmessage = function (event) {
+            var ta = document.getElementById('responseText');
+            ta.value = ta.value + '\n' + event.data
+        };
+        socket.onopen = function (event) {
+            var ta = document.getElementById('responseText');
+            ta.value = "Web Socket opened!";
+            t1 = window.setInterval(refresh, 3000); // 开启定时3秒刷新
+            currentRoom = roomId;
+        };
+        socket.onclose = function (event) {
+            var ta = document.getElementById('responseText');
+            ta.value = ta.value + "Web Socket closed";
+            window.clearInterval(t1);  // 关闭定时刷新
+        };
+    }
+
+    // 2. 发消息
+    function send(message) {
+        if (!window.WebSocket) {
+            return;
+        }
+        if (socket.readyState == WebSocket.OPEN) {
+            socket.send(message);
+        } else {
+            alert("The socket is not open.");
+        }
+    }
+
+    // 3. 刷新直播间人数
+    function refresh() {
+
+        var ajax = new XMLHttpRequest();
+        ajax.open('get', '/redis-study-03/chat/roomInfo?roomId=' + currentRoom);
+        ajax.send();
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4 && ajax.status == 200) {
+                console.log(ajax.responseText);
+                document.getElementById('roomInfo').html = ajax.responseText;
+            }
+        }
+    }
+
+</script>
+<form onsubmit="return false;">
+    <input type="text" name="userId" value="输入你的ID"/>
+    <input type="text" name="score" value="输入你的等级"/>
+    <h3>------大厅-------</h3>
+    选择直播间：
+    <select id="room">
+        <option value="1001">##直播大秀</option>
+        <option value="1002">阿妹跳舞</option>
+        <option value="1003">黑哥吞蛇666</option>
+    </select>
+    <input type="button" value="进入房间"
+           onclick="inRoom(this.form.userId.value,this.form.score.value, this.form.room.value)"/>
+
+    <h3>------发消息-------</h3>
+    <input type="text" name="message" value="Hello, World!"/>
+    <input type="button" value="发送" onclick="send(this.form.message.value)"/>
+    <h3>------公屏-------</h3>
+    --人气 ：<p id="roomInfo"></p>
+    <textarea id="responseText" style="width:500px;height:300px;"></textarea>
+    <img width="400px" height="200px"
+         src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1567942497810&di=87ba8355bb56f4b1af40e719472c4660&imgtype=0&src=http%3A%2F%2F5b0988e595225.cdn.sohucs.com%2Fimages%2F20170924%2F2a29a3cce1264e489a3a79fe320808f7.jpeg">
+</form>
+
+
+</body>
+</html>

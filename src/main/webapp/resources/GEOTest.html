@@ -1,0 +1,50 @@
+<!-- saved from url=(0022)http://127.0.0.1:8080/ -->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>附近的人</title></head>
+<body>
+<script type="text/javascript">
+    // 1. 模拟保存用户位置
+    function save(userId, longitude, latitude) {
+        var ajax = new XMLHttpRequest();
+        ajax.open('get', '/redis-study-04/geo/save?userId=' + userId + "&longitude=" + longitude + "&latitude=" + latitude);
+        ajax.send();
+        ajax.onreadystatechange = function () {
+            // 后台上报位置，无需任何返回
+            console.log(ajax.readyState + ">>>" + ajax.status);
+        }
+    }
+
+    // 2. 查询附近的人
+    function near(userId, longitude, latitude) {
+        var ajax = new XMLHttpRequest();
+        ajax.open('get', '/redis-study-04/geo/near?userId=' + userId + "&longitude=" + longitude + "&latitude=" + latitude);
+        ajax.send();
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4 && ajax.status == 200) {
+                var result = JSON.stringify(JSON.parse(ajax.responseText), null, 4);  // 缩进4个空格 ;
+                var ta = document.getElementById('responseText');
+                ta.value = result;
+            }
+        }
+    }
+
+</script>
+<form onsubmit="return false;">
+    <h3>------经纬度:(120.197246,30.193334)-------</h3>
+    <input type="text" name="longitude" value="经度"/>
+    <input type="text" name="latitude" value="纬度"/>
+    <input type="text" name="userId" value="用户ID"/>
+    <input type="button" value="模拟用户"
+           onclick="save(this.form.userId.value,this.form.longitude.value, this.form.latitude.value)"/>
+    <input type="button" value="搜索附近的人"
+           onclick="near(this.form.userId.value,this.form.longitude.value, this.form.latitude.value)"/>
+
+    <h3>------3km 附近的人列表-------</h3>
+    <textarea id="responseText" style="width:500px;height:600px;"></textarea>
+</form>
+
+
+</body>
+</html>
